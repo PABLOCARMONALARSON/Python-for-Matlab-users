@@ -1,4 +1,4 @@
-
+% Anaiendo un cambio
 function [x_out, t_out, u_out] = FisherKolmogorov(nu, ro, K_cap, u0_func, L, Tf, Nx, Nt)
 % FisherKolmogorov: Resuelve el modelo con condiciones de Neumann (ux=0)
 % Entradas:
