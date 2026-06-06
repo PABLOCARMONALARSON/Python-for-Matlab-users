@@ -1,0 +1,238 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{left=2.5cm, right=2.5cm, top=3cm, bottom=3cm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{bbm} % Para la función indicatriz
+
+\title{Control Óptimo Distribuido: Problema Adjunto y Esquema Numérico}
+\author{}
+\date{}
+
+\begin{document}
+	
+	\maketitle
+	
+	\section{Planteamiento del Problema}
+	
+	Consideremos un dominio abierto y acotado $\Omega \subset \mathbb{R}^N$ con frontera regular $\partial\Omega$, y un subdominio de control $\omega \subset \Omega$. El problema de estado para un control dado $v \in L^2(\Omega)$ viene dado por la siguiente ecuación en derivadas parciales (EDP) elíptica con condiciones de contorno de Dirichlet homogéneas:
+	\begin{equation} \label{eq:estado}
+		\begin{cases}
+			-\Delta u_v = f + v & \text{en } \Omega \\
+			u_v = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation}
+	donde $f \in L^2(\Omega)$ es un término fuente dado. Para cada $v \in L^2(\Omega)$, el problema \eqref{eq:estado} posee una única solución débil $u_v \in H^1_0(\Omega)$.
+	
+	El objetivo es encontrar un control $v$ que minimice el siguiente funcional de coste:
+	\begin{equation} \label{eq:funcional}
+		J(v) = \frac{1}{2} \int_\Omega |u_v - u_0|^2 \, dx + \frac{c}{2} \int_\Omega |v|^2 \, dx
+	\end{equation}
+	donde $u_0 \in L^2(\Omega)$ es el estado deseado y $c > 0$ es el parámetro de regularización. Note la inclusión del factor $\frac{1}{2}$ para simplificar el cálculo de las derivadas.
+	
+	Buscamos el mínimo en el conjunto de controles admisibles $K$, definido como:
+	\begin{equation*}
+		K = \{ v \in L^2(\Omega) \mid v_{\min} \le v \le v_{\max} \text{ c.t.d. en } \omega, \; v = 0 \text{ en } \Omega \setminus \omega \}
+	\end{equation*}
+	
+	\section{Deducción del Problema Adjunto y Gradiente del Funcional}
+	
+	Para aplicar métodos de optimización basados en el gradiente, necesitamos calcular la derivada de Gâteaux del funcional $J(v)$ en una dirección admisible $w \in L^2(\Omega)$.
+	
+	\subsection{Ecuación de Sensibilidad}
+	Para analizar cómo varía el estado $u_v$ ante perturbaciones en el control $v$, consideramos una dirección de perturbación $w \in L^2(\Omega)$ y un escalar real $t > 0$. El estado perturbado $u_{v+tw}$ es la solución del problema:
+	\begin{equation} \label{eq:estado_perturbado}
+		\begin{cases}
+			-\Delta u_{v+tw} = f + v + tw & \text{en } \Omega \\
+			u_{v+tw} = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation}
+	
+	Restando la ecuación de estado original \eqref{eq:estado} a la ecuación perturbada \eqref{eq:estado_perturbado}, y aprovechando la linealidad del operador Laplaciano, obtenemos:
+	\begin{equation*}
+		\begin{cases}
+			-\Delta (u_{v+tw} - u_v) = tw & \text{en } \Omega \\
+			u_{v+tw} - u_v = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation*}
+	
+	Dividiendo ambas ecuaciones por $t$, construimos el cociente incremental para el estado:
+	\begin{equation*}
+		\begin{cases}
+			-\Delta \left( \frac{u_{v+tw} - u_v}{t} \right) = w & \text{en } \Omega \\
+			\frac{u_{v+tw} - u_v}{t} = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation*}
+	
+	Tomando el límite cuando $t \to 0$, definimos la derivada direccional del estado, denotada por $\hat{u} \in H^1_0(\Omega)$, como:
+	\begin{equation*}
+		\hat{u} = \lim_{t \to 0} \frac{u_{v+tw} - u_v}{t}
+	\end{equation*}
+	Al pasar al límite en el sistema anterior, deducimos que $\hat{u}$ satisface la denominada \textit{ecuación de sensibilidad}:
+	\begin{equation} \label{eq:sensibilidad}
+		\begin{cases}
+			-\Delta \hat{u} = w & \text{en } \Omega \\
+			\hat{u} = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation}
+	
+	\subsection{Derivada de Gâteaux del funcional $J(v)$}
+	Procedemos a calcular la derivada direccional (o derivada de Gâteaux) del funcional $J(v)$ en la dirección $w$, la cual se define mediante el límite:
+	\begin{equation*}
+		J'(v) \cdot w = \lim_{t \to 0} \frac{J(v+tw) - J(v)}{t}
+	\end{equation*}
+	
+	Evaluamos el funcional en el control perturbado $v+tw$:
+	\begin{equation*}
+		J(v+tw) = \frac{1}{2} \int_\Omega |u_{v+tw} - u_0|^2 \, dx + \frac{c}{2} \int_\Omega |v+tw|^2 \, dx
+	\end{equation*}
+	
+	Calculamos la diferencia $J(v+tw) - J(v)$ agrupando por un lado los términos de observación del estado y por otro los de regularización del control:
+	\begin{align*}
+		J(v+tw) - J(v) &= \frac{1}{2} \int_\Omega \left( |u_{v+tw} - u_0|^2 - |u_v - u_0|^2 \right) dx \\
+		&\quad + \frac{c}{2} \int_\Omega \left( |v+tw|^2 - |v|^2 \right) dx
+	\end{align*}
+	
+	Desarrollamos el término correspondiente al control expandiendo el binomio al cuadrado:
+	\begin{equation*}
+		|v+tw|^2 - |v|^2 = v^2 + 2tvw + t^2w^2 - v^2 = t(2vw + tw^2)
+	\end{equation*}
+	
+	Para el término correspondiente al estado, utilizamos la identidad de diferencia de cuadrados $a^2 - b^2 = (a-b)(a+b)$:
+	\begin{equation*}
+		|u_{v+tw} - u_0|^2 - |u_v - u_0|^2 = (u_{v+tw} - u_v)(u_{v+tw} + u_v - 2u_0)
+	\end{equation*}
+	
+	Sustituimos estas expansiones algebraicas en la diferencia del funcional y dividimos todo por $t$:
+	\begin{align*}
+		\frac{J(v+tw) - J(v)}{t} &= \int_\Omega \left( \frac{u_{v+tw} - u_v}{t} \right) \frac{1}{2} \left( u_{v+tw} + u_v - 2u_0 \right) dx \\
+		&\quad + \frac{c}{2} \int_\Omega (2vw + tw^2) \, dx
+	\end{align*}
+	
+	Finalmente, tomamos el límite cuando $t \to 0$. Recordando que $\lim_{t \to 0} \frac{u_{v+tw} - u_v}{t} = \hat{u}$ y que $\lim_{t \to 0} u_{v+tw} = u_v$, obtenemos:
+	\begin{align*}
+		J'(v) \cdot w &= \int_\Omega \hat{u} \cdot \frac{1}{2} (2u_v - 2u_0) \, dx + \frac{c}{2} \int_\Omega 2vw \, dx \\
+		&= \int_\Omega (u_v - u_0)\hat{u} \, dx + c \int_\Omega v w \, dx
+	\end{align*}
+	
+	Esta expresión nos da la derivada direccional de $J$. Sin embargo, el principal inconveniente computacional radica en que evaluar la primera integral requiere conocer $\hat{u}$, lo que implicaría resolver la ecuación de sensibilidad \eqref{eq:sensibilidad} para cada posible dirección de perturbación $w$.
+	
+	\subsection{El Método del Estado Adjunto}
+	Para eliminar la dependencia explícita de $\hat{u}$, introducimos una nueva variable $p \in H^1_0(\Omega)$, denominada \textit{estado adjunto}, que definimos como la solución del siguiente problema:
+	\begin{equation} \label{eq:adjunto}
+		\begin{cases}
+			-\Delta p = u_v - u_0 & \text{en } \Omega \\
+			p = 0 & \text{sobre } \partial\Omega
+		\end{cases}
+	\end{equation}
+	Multiplicamos la ecuación \eqref{eq:adjunto} por $\hat{u}$ e integramos sobre $\Omega$:
+	\begin{equation*}
+		\int_\Omega (-\Delta p) \hat{u} \, dx = \int_\Omega (u_v - u_0)\hat{u} \, dx
+	\end{equation*}
+	Aplicando la fórmula de Green (integración por partes dos veces) y utilizando que tanto $p$ como $\hat{u}$ se anulan en $\partial\Omega$:
+	\begin{equation*}
+		\int_\Omega (-\Delta p) \hat{u} \, dx = \int_\Omega \nabla p \cdot \nabla \hat{u} \, dx = \int_\Omega p (-\Delta \hat{u}) \, dx
+	\end{equation*}
+	Sustituyendo $-\Delta \hat{u} = w$ por la ecuación \eqref{eq:sensibilidad}, obtenemos la identidad fundamental:
+	\begin{equation*}
+		\int_\Omega (u_v - u_0)\hat{u} \, dx = \int_\Omega p w \, dx
+	\end{equation*}
+	Sustituyendo este resultado en la expresión de la derivada direccional del funcional:
+	\begin{equation*}
+		J'(v) \cdot w = \int_\Omega p w \, dx + c \int_\Omega v w \, dx = \int_\Omega (p + cv) w \, dx
+	\end{equation*}
+	Por la definición del gradiente en el espacio de Hilbert $L^2(\Omega)$, concluimos que el gradiente del funcional es:
+	\begin{equation} \label{eq:gradiente}
+		\nabla J(v) = p + c v
+	\end{equation}
+	
+	\section{Condición de Optimalidad y Esquema Numérico}
+	\begin{equation}
+		\label{Bobota}
+		\mathbb{X} \binom{n}{k}\supseteqq  
+	\end{equation}
+	hola que tal estamos 
+	\subsection{Condición Necesaria y Suficiente de Optimalidad (Desigualdad Variacional)}
+	El conjunto de controles admisibles $K$ es un subconjunto convexo y cerrado del espacio de Hilbert $L^2(\Omega)$. Por otro lado, el funcional de coste $J(v)$ es estrictamente convexo respecto al control (garantizado por la presencia del término de regularización de Tikhonov $\frac{c}{2} \|v\|^2_{L^2(\Omega)}$ con $c > 0$) y diferenciable según la derivada de Gâteaux obtenida en la sección anterior.
+	
+	Por la teoría clásica de optimización convexa, existe un único control óptimo $\overline{v} \in K$ que minimiza el funcional $J$. Este óptimo está caracterizado completamente por la siguiente desigualdad variacional de primer orden:
+	\begin{equation} \label{eq:desigualdad_variacional}
+		\langle \nabla J(\overline{v}), w - \overline{v} \rangle_{L^2(\Omega)} \ge 0 \quad \forall w \in K
+	\end{equation}
+	
+	Sustituyendo la expresión explícita del gradiente $\nabla J(\overline{v}) = p + c\overline{v}$ (donde $p$ es el estado adjunto asociado al control óptimo $\overline{v}$), obtenemos la condición integral:
+	\begin{equation} \label{eq:des_var_integral}
+		\int_\Omega (p + c\overline{v})(w - \overline{v}) \, dx \ge 0 \quad \forall w \in K
+	\end{equation}
+	
+	\subsection{Operador de Proyección y Expresión Puntual}
+	La integral \eqref{eq:des_var_integral} se puede analizar punto a punto (casi en todas partes en $\Omega$) gracias a la estructura localizada del conjunto $K$. Dividimos el análisis según la posición geométrica:
+	
+	\begin{itemize}
+		\item \textbf{Fuera del dominio de control ($x \in \Omega \setminus \omega$):} Por definición de $K$, tanto el control óptimo como cualquier perturbación admisible deben ser idénticamente nulos, es decir, $\overline{v}(x) = 0$ y $w(x) = 0$. La condición se satisface de forma trivial.
+		\item \textbf{Dentro del dominio de control ($x \in \omega$):} La condición integral se reduce a exigir que, para casi todo $x \in \omega$, se cumpla la desigualdad puntual:
+		\begin{equation*}
+			(p(x) + c\overline{v}(x))(w(x) - \overline{v}(x)) \ge 0 \quad \forall w(x) \in [v_{\min}, v_{\max}]
+		\end{equation*}
+	\end{itemize}
+	
+	Esta desigualdad puntual es la caracterización estándar de la proyección ortogonal de un escalar sobre un intervalo cerrado en $\mathbb{R}$. Multiplicando el primer factor por un parámetro arbitrario $\rho > 0$, la desigualdad equivale a afirmar que $\overline{v}(x)$ es la proyección del punto $\overline{v}(x) - \rho(p(x) + c\overline{v}(x))$ sobre el intervalo admisible.
+	
+	Para construir un esquema de actualización eficiente (un punto fijo), elegimos de manera estratégica el tamaño de paso como el inverso del coeficiente de regularización, $\rho = \frac{1}{c}$. Evaluando el argumento de la proyección con este parámetro:
+	\begin{equation*}
+		\overline{v}(x) - \frac{1}{c}(p(x) + c\overline{v}(x)) = \overline{v}(x) - \frac{p(x)}{c} - \overline{v}(x) = -\frac{p(x)}{c}
+	\end{equation*}
+	
+	Esto colapsa la condición de optimalidad en una ecuación algebraica exacta. Utilizando la función indicatriz $\mathbb{I}_\omega$ (que toma el valor 1 si $x \in \omega$ y 0 en el resto del dominio), la fórmula analítica para el control óptimo global es:
+	\begin{equation} \label{eq:opt_proj}
+		\overline{v} = \mathbb{I}_\omega \mathbb{P}_{[v_{\min}, v_{\max}]} \left( -\frac{p}{c} \right)
+	\end{equation}
+	donde $\mathbb{P}$ actúa truncando el escalar a los límites del intervalo.
+	
+	\subsection{Esquema Numérico: Método del Gradiente Proyectado}
+	La ecuación \eqref{eq:opt_proj} sugiere inmediatamente un esquema iterativo para resolver el sistema acoplado no lineal de optimalidad. Dado que la elección de $\rho = 1/c$ simplifica la expresión anulando el iterado previo dentro de la proyección, este método es estructuralmente equivalente al \textbf{Método del Gradiente Proyectado} con un paso fijo óptimo predeterminado.
+	
+	A continuación, se detalla el algoritmo para aproximar la solución numérica acoplada:
+	
+	\begin{algorithm}[H]
+		\caption{Método del Gradiente Proyectado (Esquema de Punto Fijo)}
+		\begin{algorithmic}[1]
+			\State \textbf{Inicialización:} Seleccionar una tolerancia $\varepsilon > 0$ como criterio de parada y un control inicial admisible $v_0 \in K$ (típicamente $v_0 \equiv 0$).
+			\State $n \gets 0$
+			\Repeat
+			\State \textbf{Paso 1: Ecuación de Estado.} Calcular $u_n \in H^1_0(\Omega)$ resolviendo:
+			\begin{equation*}
+				\begin{cases}
+					-\Delta u_n = f + v_n & \text{en } \Omega \\
+					u_n = 0 & \text{sobre } \partial\Omega
+				\end{cases}
+			\end{equation*}
+			
+			\State \textbf{Paso 2: Ecuación Adjunta.} Con el estado $u_n$ conocido, calcular la variable adjunta $p_n \in H^1_0(\Omega)$ mediante:
+			\begin{equation*}
+				\begin{cases}
+					-\Delta p_n = u_n - u_0 & \text{en } \Omega \\
+					p_n = 0 & \text{sobre } \partial\Omega
+				\end{cases}
+			\end{equation*}
+			
+			\State \textbf{Paso 3: Proyección del Control.} Actualizar el control aplicando la restricción de desigualdad:
+			\begin{equation*}
+				v_{n+1}(x) = 
+				\begin{cases} 
+					\min\left(v_{\max}, \max\left(v_{\min}, -\frac{p_n(x)}{c}\right)\right) & \text{si } x \in \omega \\
+					0 & \text{si } x \in \Omega \setminus \omega
+				\end{cases}
+			\end{equation*}
+			
+			\State $n \gets n + 1$
+			\Until{$\|v_n - v_{n-1}\|_{L^2(\Omega)} < \varepsilon$}
+			\State \textbf{Salida:} La aproximación al control óptimo es $\overline{v} \approx v_n$.
+		\end{algorithmic}
+	\end{algorithm}
+	
+\end{document}

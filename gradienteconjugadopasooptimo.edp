@@ -82,4 +82,5 @@ for (int k = 0; k < Nmax; k++) {
 	cout << "Error " << normg << endl;
 	if (normg < tol) {break;}
 }
+plot(u, dim = 3, value = true, fill = true);
 	
