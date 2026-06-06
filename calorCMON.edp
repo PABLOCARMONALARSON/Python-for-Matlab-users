@@ -1,0 +1,57 @@
+// Resolucion de la ecuacion del calor con condiciones tipo Dirichlet
+
+verbosity = 0;
+
+// Calculo de la malla del dominio 
+int Nx = 100; 
+border Gamma1(t=0., pi){x=cos(t); y=sin(t); label = 1;};
+border Gamma2(t = pi, 2.*pi) {x=cos(t); y=sin(t); label = 2;};
+mesh Th = buildmesh(Gamma1(Nx) + Gamma2(2*Nx));
+plot(Th, wait=1); 
+
+// Particion del intervalo [0,T]
+int Nt = 50; // Número de nodos temporales
+real T=2; 
+real dt=T/(Nt-1); 
+real t = 0.;
+
+// Definicion del espacio de elementos finitos
+fespace Vh(Th, P1);  
+
+// Datos del problema
+func nu = 10; 
+func u0 = sin(2*pi*(x+y));
+func f = -2*pi*sin(2*pi*t)*sin(2*pi*(x+y))-2*nu*(2*pi)^2*cos(2*pi*t)*sin(2*pi*(x+y));
+func g = sin(2*pi*(x+y))*cos(2*pi*t);
+
+// Inicializando 
+Vh uold=u0;  //uold=u^k
+Vh u,v; 
+
+// Definimos el problema
+problem calor(u,v)
+	= int2d(Th)(u*v)
+	+ int2d(Th)(dt*nu*(dx(u)*dx(v)+dy(u)*dy(v)))
+	- int2d(Th)(dt*f*v)
+	- int2d(Th)(uold*v)
+	+ on(1, u=0);
+	
+
+for (int k=0; k<Nt-1; k++) {
+	t=t+dt; // Actualizamos el tiempo
+	// En versiones recientes de C++ hay que volver a poner dentro del bucle esto
+	func f = -2*pi*sin(2*pi*t)*sin(2*pi*(x+y))-2*nu*(2*pi)^2*cos(2*pi*t)*sin(2*pi*(x+y));
+	func g = sin(2*pi*(x+y))*cos(2*pi*t);
+	//solve dr(u,v)=int2d(Th)(u*v+dt*nu*(dx(u)*dx(v)+dy(u)*dy(v)))-int2d(Th)(dt*f*v+uold*v)+on(1,2,3,4, u=g); 
+	calor;
+	if (k % 2 == 0) {
+		plot(u, dim=3, fill=1,prev = true, value = true); 
+	}
+	// Para calcular el error: 
+	// func e=abs(u-g); 
+	// Vh eh=e;
+	// plot(eh, fill=1); 
+	uold=u; 
+}
+
+	

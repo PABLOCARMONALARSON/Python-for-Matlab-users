@@ -1,0 +1,85 @@
+verbosity = 0;
+
+// Datos del problema
+border Gamma(t = 0., 2.*pi) {x = sqrt(5.)*cos(t); y = sqrt(5.)*sin(t);};
+func nu = 100*exp(-(x^2+y^2)/100);
+func alpha = exp((x^2+y^2)/100);
+func f = 5*(x^2+y^2<0.1);
+
+
+// Definimos la malla y el espacio de elementos finitos
+int Nint = 200;
+mesh Th = buildmesh(Gamma(Nint));
+fespace Vh(Th,P2);
+
+// Calculamos el z que aparece en el algoritmo
+Vh z, v;
+solve Riesz(z,v)
+	= int2d(Th)(dx(z)*dx(v) + dy(z)*dy(v))
+	- int2d(Th)(f*v)
+	+ on(Gamma, z = 0);
+
+// Datos del algoritmo
+Vh u = 0; // Solución actualizada
+Vh g; // El gradiente actualizado
+real normg; // Normal del gradiente actualizada
+real normgold; // Normal del gradiente del paso anterior
+Vh gold; // El gradiente del paso anterior
+Vh w; // Parte del gradiente 
+Vh d; // Dirección de descenso acutalizada
+real rho; // El término de descenso
+real lambda; // Los lambda del agoritmo
+int Nmax = 200; // Número máximo de iteraciones
+real tol = 1.e-10; // Tolerancia del algoritmo
+
+// Escribimos el problema por el teorema de Riesz
+problem Rieszw(w,v) 
+	= int2d(Th)(dx(w)*dx(v) + dy(w)*dy(v))
+	- int2d(Th)(nu*(dx(u)*dx(v) + dy(u)*dy(v)) + alpha*u*v)
+	+ on(Gamma, w = 0);
+
+// Realizamos la primera etapa del algoritmo
+// Calculamos d_0
+Rieszw;
+g = w - z;
+d = g;
+
+// Calculamos rho_0
+rho = int2d(Th)(dx(g)*dx(d) + dy(g)*dy(d)) 
+	/ int2d(Th)(nu*(dx(d)^2+dy(d)^2) + alpha*d^2);
+
+// Calculamos u_1
+u = u - rho*d;
+
+// Actualizamos la norma del gradiente
+normgold = sqrt(int2d(Th)(dx(g)^2 + dy(g)^2));
+
+// Realizamos el resto de iteraciones
+for (int k = 0; k < Nmax; k++) {
+	// Calculamos el gradiente
+	Rieszw;
+	g = w - z;
+	normg = sqrt(int2d(Th)(dx(g)^2 + dy(g)^2));
+	
+	// Calculamos lambda
+	lambda = (normg / normgold)^2;
+	
+	// Calculamos la dirección de descenso
+	d = g + lambda*d;
+	
+	// Calculamos el paso de descenso
+	rho = int2d(Th)(dx(g)*dx(d) + dy(g)*dy(d)) 
+		/ int2d(Th)(nu*(dx(d)^2+dy(d)^2) + alpha*d^2);
+	
+	// Calculamos la solución 
+	u = u - rho*d;
+	
+	// Actualizamos la normal del gradiente
+	normgold = normg;
+	
+	// Imprimimos el error
+	cout << "Etapa "<<k<< endl;
+	cout << "Error " << normg << endl;
+	if (normg < tol) {break;}
+}
+	
